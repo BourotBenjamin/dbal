@@ -148,12 +148,13 @@ class Statement implements \IteratorAggregate, DriverStatement
      * Executes the statement with the currently bound parameters.
      *
      * @param array|null $params
+     * @param boolean $retry
      *
      * @return boolean TRUE on success, FALSE on failure.
      *
      * @throws \Doctrine\DBAL\DBALException
      */
-    public function execute($params = null)
+    public function execute($params = null, $retry = true)
     {
         if (is_array($params)) {
             $this->params = $params;
@@ -167,6 +168,11 @@ class Statement implements \IteratorAggregate, DriverStatement
         try {
             $stmt = $this->stmt->execute($params);
         } catch (\Exception $ex) {
+            if($retry && $ex instanceof \PDOException && $ex->errorInfo[0]==40001)
+            {
+                sleep(1);
+                return $this->execute($params, false);
+            }
             if ($logger) {
                 $logger->stopQuery();
             }
