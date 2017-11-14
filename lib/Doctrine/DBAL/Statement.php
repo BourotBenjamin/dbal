@@ -168,9 +168,9 @@ class Statement implements \IteratorAggregate, DriverStatement
         try {
             $stmt = $this->stmt->execute($params);
         } catch (\Exception $ex) {
-            if($retry && $ex instanceof \PDOException && $ex->errorInfo[0]==40001)
+            if($ex instanceof \PDOException && $ex->errorInfo[0]==40001)
             {
-                sleep(1);
+                usleep(rand(0, 1500));
                 return $this->execute($params, false);
             }
             if ($logger) {
@@ -180,7 +180,8 @@ class Statement implements \IteratorAggregate, DriverStatement
                 $this->conn->getDriver(),
                 $ex,
                 $this->sql,
-                $this->conn->resolveParams($this->params, $this->types)
+                $this->conn->resolveParams($this->params, $this->types),
+                !$retry
             );
         }
 

@@ -116,13 +116,13 @@ class DBALException extends \Exception
      *
      * @return \Doctrine\DBAL\DBALException
      */
-    public static function driverExceptionDuringQuery(Driver $driver, \Exception $driverEx, $sql, array $params = array())
+    public static function driverExceptionDuringQuery(Driver $driver, \Exception $driverEx, $sql, array $params = array(), $retried = false)
     {
-        $msg = "An exception occurred while executing '".$sql."'";
+        $msg = "An exception occurred ".($retried?"twice":"")." while executing '".$sql."'";
         if ($params) {
             $msg .= " with params " . self::formatParameters($params);
         }
-        $msg .= ":\n\n".$driverEx->getMessage();
+        $msg .= ":\n\n".$driverEx->getMessage()." (".$driverEx->errorInfo[0].")";
 
         if ($driver instanceof ExceptionConverterDriver && $driverEx instanceof DriverException) {
             return $driver->convertException($msg, $driverEx);
