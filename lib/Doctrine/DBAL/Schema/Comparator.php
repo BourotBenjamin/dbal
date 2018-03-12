@@ -429,10 +429,20 @@ class Comparator
 
         $changedProperties = array();
 
-        foreach (array('type', 'notnull', 'unsigned', 'autoincrement') as $property) {
+        if(strpos($properties1["columnDefinition"], "UNSIGNED") !== false) $properties1["unsigned"] = true;
+        if(strpos($properties2["columnDefinition"], "UNSIGNED") !== false) $properties2["unsigned"] = true;
+        if(strpos($properties1["columnDefinition"], "AUTO_INCREMENT") !== false) $properties1["autoincrement"] = true;
+        if(strpos($properties2["columnDefinition"], "AUTO_INCREMENT") !== false) $properties2["autoincrement"] = true;
+        if(strpos($properties1["columnDefinition"], "NOT NULL") !== false) $properties1["notnull"] = true;
+        if(strpos($properties2["columnDefinition"], "NOT NULL") !== false) $properties2["notnull"] = true;
+        foreach (array('notnull', 'unsigned', 'autoincrement') as $property) {
             if ($properties1[$property] != $properties2[$property]) {
                 $changedProperties[] = $property;
             }
+        }
+        if ($properties1["type"] != $properties2["type"]) {
+            if(!($properties1["type"] instanceof Types\BooleanType && $properties2["type"] instanceof Types\IntegerType && strpos($properties2["columnDefinition"], "TINYINT") !== false))
+                $changedProperties[] = "type";
         }
 
         // This is a very nasty hack to make comparator work with the legacy json_array type, which should be killed in v3
