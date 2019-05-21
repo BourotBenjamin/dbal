@@ -3,6 +3,7 @@
 namespace Doctrine\DBAL\Schema;
 
 use Doctrine\DBAL\Types;
+use Youmiam\MiscBundle\DBAL\MappingTypes\TinyIntType;
 use function array_intersect_key;
 use function array_key_exists;
 use function array_keys;
@@ -427,18 +428,10 @@ class Comparator
             if ($properties1[$property] != $properties2[$property]) {
                 $changedProperties[] = $property;
             }
-            $changedProperties[] = $property;
         }
         if ($properties1["type"] != $properties2["type"]) {
-            if(!($properties1["type"] instanceof Types\BooleanType && $properties2["type"] instanceof Types\IntegerType && strpos($properties2["columnDefinition"], "TINYINT") !== false))
+            if(!($properties2["type"] instanceof Types\BooleanType && $properties1["type"] instanceof TinyIntType))
                 $changedProperties[] = "type";
-        }
-
-        // This is a very nasty hack to make comparator work with the legacy json_array type, which should be killed in v3
-        if ($this->isALegacyJsonComparison($properties1['type'], $properties2['type'])) {
-            array_shift($changedProperties);
-
-            $changedProperties[] = 'comment';
         }
 
         // This is a very nasty hack to make comparator work with the legacy json_array type, which should be killed in v3
