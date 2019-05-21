@@ -4,6 +4,7 @@ namespace Doctrine\Tests\DBAL\Functional\Driver\OCI8;
 
 use Doctrine\DBAL\Driver\OCI8\Driver;
 use Doctrine\Tests\DBAL\Functional\Driver\AbstractDriverTest;
+use function extension_loaded;
 
 class DriverTest extends AbstractDriverTest
 {
@@ -15,9 +16,11 @@ class DriverTest extends AbstractDriverTest
 
         parent::setUp();
 
-        if (! $this->_conn->getDriver() instanceof Driver) {
-            $this->markTestSkipped('oci8 only test.');
+        if ($this->connection->getDriver() instanceof Driver) {
+            return;
         }
+
+        $this->markTestSkipped('oci8 only test.');
     }
 
     /**

@@ -3,10 +3,12 @@
 namespace Doctrine\Tests\DBAL\Schema;
 
 use Doctrine\DBAL\Schema\Identifier;
+use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\Tests\DBAL\Mocks\MockPlatform;
+use PHPUnit\Framework\TestCase;
 
-class TableDiffTest extends \PHPUnit_Framework_TestCase
+class TableDiffTest extends TestCase
 {
     /**
      * @group DBAL-1013
@@ -15,7 +17,7 @@ class TableDiffTest extends \PHPUnit_Framework_TestCase
     {
         $tableDiff = new TableDiff('foo');
 
-        $this->assertEquals(new Identifier('foo'), $tableDiff->getName(new MockPlatform()));
+        self::assertEquals(new Identifier('foo'), $tableDiff->getName(new MockPlatform()));
     }
 
     /**
@@ -24,11 +26,11 @@ class TableDiffTest extends \PHPUnit_Framework_TestCase
     public function testPrefersNameFromTableObject()
     {
         $platformMock = new MockPlatform();
-        $tableMock = $this->getMockBuilder('Doctrine\DBAL\Schema\Table')
+        $tableMock    = $this->getMockBuilder(Table::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $tableDiff = new TableDiff('foo');
+        $tableDiff            = new TableDiff('foo');
         $tableDiff->fromTable = $tableMock;
 
         $tableMock->expects($this->once())
@@ -36,7 +38,7 @@ class TableDiffTest extends \PHPUnit_Framework_TestCase
             ->with($platformMock)
             ->will($this->returnValue('foo'));
 
-        $this->assertEquals(new Identifier('foo'), $tableDiff->getName($platformMock));
+        self::assertEquals(new Identifier('foo'), $tableDiff->getName($platformMock));
     }
 
     /**
@@ -46,10 +48,10 @@ class TableDiffTest extends \PHPUnit_Framework_TestCase
     {
         $tableDiff = new TableDiff('foo');
 
-        $this->assertFalse($tableDiff->getNewName());
+        self::assertFalse($tableDiff->getNewName());
 
         $tableDiff->newName = 'bar';
 
-        $this->assertEquals(new Identifier('bar'), $tableDiff->getNewName());
+        self::assertEquals(new Identifier('bar'), $tableDiff->getNewName());
     }
 }

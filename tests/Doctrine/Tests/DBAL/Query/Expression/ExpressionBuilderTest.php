@@ -2,19 +2,22 @@
 
 namespace Doctrine\Tests\DBAL\Query\Expression;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\Expression\CompositeExpression;
 use Doctrine\DBAL\Query\Expression\ExpressionBuilder;
+use Doctrine\Tests\DbalTestCase;
 
 /**
  * @group DBAL-12
  */
-class ExpressionBuilderTest extends \Doctrine\Tests\DbalTestCase
+class ExpressionBuilderTest extends DbalTestCase
 {
+    /** @var ExpressionBuilder */
     protected $expr;
 
     protected function setUp()
     {
-        $conn = $this->createMock('Doctrine\DBAL\Connection');
+        $conn = $this->createMock(Connection::class);
 
         $this->expr = new ExpressionBuilder($conn);
 
@@ -34,49 +37,49 @@ class ExpressionBuilderTest extends \Doctrine\Tests\DbalTestCase
             $composite->add($part);
         }
 
-        $this->assertEquals($expected, (string) $composite);
+        self::assertEquals($expected, (string) $composite);
     }
 
     public function provideDataForAndX()
     {
-        return array(
-            array(
-                array('u.user = 1'),
-                'u.user = 1'
-            ),
-            array(
-                array('u.user = 1', 'u.group_id = 1'),
-                '(u.user = 1) AND (u.group_id = 1)'
-            ),
-            array(
-                array('u.user = 1'),
-                'u.user = 1'
-            ),
-            array(
-                array('u.group_id = 1', 'u.group_id = 2'),
-                '(u.group_id = 1) AND (u.group_id = 2)'
-            ),
-            array(
-                array(
+        return [
+            [
+                ['u.user = 1'],
+                'u.user = 1',
+            ],
+            [
+                ['u.user = 1', 'u.group_id = 1'],
+                '(u.user = 1) AND (u.group_id = 1)',
+            ],
+            [
+                ['u.user = 1'],
+                'u.user = 1',
+            ],
+            [
+                ['u.group_id = 1', 'u.group_id = 2'],
+                '(u.group_id = 1) AND (u.group_id = 2)',
+            ],
+            [
+                [
                     'u.user = 1',
                     new CompositeExpression(
                         CompositeExpression::TYPE_OR,
-                        array('u.group_id = 1', 'u.group_id = 2')
-                    )
-                ),
-                '(u.user = 1) AND ((u.group_id = 1) OR (u.group_id = 2))'
-            ),
-            array(
-                array(
+                        ['u.group_id = 1', 'u.group_id = 2']
+                    ),
+                ],
+                '(u.user = 1) AND ((u.group_id = 1) OR (u.group_id = 2))',
+            ],
+            [
+                [
                     'u.group_id = 1',
                     new CompositeExpression(
                         CompositeExpression::TYPE_AND,
-                        array('u.user = 1', 'u.group_id = 2')
-                    )
-                ),
-                '(u.group_id = 1) AND ((u.user = 1) AND (u.group_id = 2))'
-            ),
-        );
+                        ['u.user = 1', 'u.group_id = 2']
+                    ),
+                ],
+                '(u.group_id = 1) AND ((u.user = 1) AND (u.group_id = 2))',
+            ],
+        ];
     }
 
     /**
@@ -90,49 +93,49 @@ class ExpressionBuilderTest extends \Doctrine\Tests\DbalTestCase
             $composite->add($part);
         }
 
-        $this->assertEquals($expected, (string) $composite);
+        self::assertEquals($expected, (string) $composite);
     }
 
     public function provideDataForOrX()
     {
-        return array(
-            array(
-                array('u.user = 1'),
-                'u.user = 1'
-            ),
-            array(
-                array('u.user = 1', 'u.group_id = 1'),
-                '(u.user = 1) OR (u.group_id = 1)'
-            ),
-            array(
-                array('u.user = 1'),
-                'u.user = 1'
-            ),
-            array(
-                array('u.group_id = 1', 'u.group_id = 2'),
-                '(u.group_id = 1) OR (u.group_id = 2)'
-            ),
-            array(
-                array(
+        return [
+            [
+                ['u.user = 1'],
+                'u.user = 1',
+            ],
+            [
+                ['u.user = 1', 'u.group_id = 1'],
+                '(u.user = 1) OR (u.group_id = 1)',
+            ],
+            [
+                ['u.user = 1'],
+                'u.user = 1',
+            ],
+            [
+                ['u.group_id = 1', 'u.group_id = 2'],
+                '(u.group_id = 1) OR (u.group_id = 2)',
+            ],
+            [
+                [
                     'u.user = 1',
                     new CompositeExpression(
                         CompositeExpression::TYPE_OR,
-                        array('u.group_id = 1', 'u.group_id = 2')
-                    )
-                ),
-                '(u.user = 1) OR ((u.group_id = 1) OR (u.group_id = 2))'
-            ),
-            array(
-                array(
+                        ['u.group_id = 1', 'u.group_id = 2']
+                    ),
+                ],
+                '(u.user = 1) OR ((u.group_id = 1) OR (u.group_id = 2))',
+            ],
+            [
+                [
                     'u.group_id = 1',
                     new CompositeExpression(
                         CompositeExpression::TYPE_AND,
-                        array('u.user = 1', 'u.group_id = 2')
-                    )
-                ),
-                '(u.group_id = 1) OR ((u.user = 1) AND (u.group_id = 2))'
-            ),
-        );
+                        ['u.user = 1', 'u.group_id = 2']
+                    ),
+                ],
+                '(u.group_id = 1) OR ((u.user = 1) AND (u.group_id = 2))',
+            ],
+        ];
     }
 
     /**
@@ -142,78 +145,107 @@ class ExpressionBuilderTest extends \Doctrine\Tests\DbalTestCase
     {
         $part = $this->expr->comparison($leftExpr, $operator, $rightExpr);
 
-        $this->assertEquals($expected, (string) $part);
+        self::assertEquals($expected, (string) $part);
     }
 
     public function provideDataForComparison()
     {
-        return array(
-            array('u.user_id', ExpressionBuilder::EQ, '1', 'u.user_id = 1'),
-            array('u.user_id', ExpressionBuilder::NEQ, '1', 'u.user_id <> 1'),
-            array('u.salary', ExpressionBuilder::LT, '10000', 'u.salary < 10000'),
-            array('u.salary', ExpressionBuilder::LTE, '10000', 'u.salary <= 10000'),
-            array('u.salary', ExpressionBuilder::GT, '10000', 'u.salary > 10000'),
-            array('u.salary', ExpressionBuilder::GTE, '10000', 'u.salary >= 10000'),
-        );
+        return [
+            ['u.user_id', ExpressionBuilder::EQ, '1', 'u.user_id = 1'],
+            ['u.user_id', ExpressionBuilder::NEQ, '1', 'u.user_id <> 1'],
+            ['u.salary', ExpressionBuilder::LT, '10000', 'u.salary < 10000'],
+            ['u.salary', ExpressionBuilder::LTE, '10000', 'u.salary <= 10000'],
+            ['u.salary', ExpressionBuilder::GT, '10000', 'u.salary > 10000'],
+            ['u.salary', ExpressionBuilder::GTE, '10000', 'u.salary >= 10000'],
+        ];
     }
 
     public function testEq()
     {
-        $this->assertEquals('u.user_id = 1', $this->expr->eq('u.user_id', '1'));
+        self::assertEquals('u.user_id = 1', $this->expr->eq('u.user_id', '1'));
     }
 
     public function testNeq()
     {
-        $this->assertEquals('u.user_id <> 1', $this->expr->neq('u.user_id', '1'));
+        self::assertEquals('u.user_id <> 1', $this->expr->neq('u.user_id', '1'));
     }
 
     public function testLt()
     {
-        $this->assertEquals('u.salary < 10000', $this->expr->lt('u.salary', '10000'));
+        self::assertEquals('u.salary < 10000', $this->expr->lt('u.salary', '10000'));
     }
 
     public function testLte()
     {
-        $this->assertEquals('u.salary <= 10000', $this->expr->lte('u.salary', '10000'));
+        self::assertEquals('u.salary <= 10000', $this->expr->lte('u.salary', '10000'));
     }
 
     public function testGt()
     {
-        $this->assertEquals('u.salary > 10000', $this->expr->gt('u.salary', '10000'));
+        self::assertEquals('u.salary > 10000', $this->expr->gt('u.salary', '10000'));
     }
 
     public function testGte()
     {
-        $this->assertEquals('u.salary >= 10000', $this->expr->gte('u.salary', '10000'));
+        self::assertEquals('u.salary >= 10000', $this->expr->gte('u.salary', '10000'));
     }
 
     public function testIsNull()
     {
-        $this->assertEquals('u.deleted IS NULL', $this->expr->isNull('u.deleted'));
+        self::assertEquals('u.deleted IS NULL', $this->expr->isNull('u.deleted'));
     }
 
     public function testIsNotNull()
     {
-        $this->assertEquals('u.updated IS NOT NULL', $this->expr->isNotNull('u.updated'));
+        self::assertEquals('u.updated IS NOT NULL', $this->expr->isNotNull('u.updated'));
     }
 
     public function testIn()
     {
-        $this->assertEquals('u.groups IN (1, 3, 4, 7)', $this->expr->in('u.groups', array(1,3,4,7)));
+        self::assertEquals('u.groups IN (1, 3, 4, 7)', $this->expr->in('u.groups', [1, 3, 4, 7]));
     }
 
     public function testInWithPlaceholder()
     {
-        $this->assertEquals('u.groups IN (?)', $this->expr->in('u.groups', '?'));
+        self::assertEquals('u.groups IN (?)', $this->expr->in('u.groups', '?'));
     }
 
     public function testNotIn()
     {
-        $this->assertEquals('u.groups NOT IN (1, 3, 4, 7)', $this->expr->notIn('u.groups', array(1,3,4,7)));
+        self::assertEquals('u.groups NOT IN (1, 3, 4, 7)', $this->expr->notIn('u.groups', [1, 3, 4, 7]));
     }
 
     public function testNotInWithPlaceholder()
     {
-        $this->assertEquals('u.groups NOT IN (:values)', $this->expr->notIn('u.groups', ':values'));
+        self::assertEquals('u.groups NOT IN (:values)', $this->expr->notIn('u.groups', ':values'));
+    }
+
+    public function testLikeWithoutEscape()
+    {
+        self::assertEquals("a.song LIKE 'a virgin'", $this->expr->like('a.song', "'a virgin'"));
+    }
+
+    public function testLikeWithEscape()
+    {
+        self::assertEquals(
+            "a.song LIKE 'a virgin' ESCAPE '💩'",
+            $this->expr->like('a.song', "'a virgin'", "'💩'")
+        );
+    }
+
+    public function testNotLikeWithoutEscape()
+    {
+        self::assertEquals(
+            "s.last_words NOT LIKE 'this'",
+            $this->expr->notLike('s.last_words', "'this'")
+        );
+    }
+
+    public function testNotLikeWithEscape()
+    {
+        self::assertEquals(
+            "p.description NOT LIKE '20💩%' ESCAPE '💩'",
+            $this->expr->notLike('p.description', "'20💩%'", "'💩'")
+        );
     }
 }

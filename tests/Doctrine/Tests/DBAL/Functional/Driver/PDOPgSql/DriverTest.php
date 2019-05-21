@@ -6,6 +6,10 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\PDOPgSql\Driver;
 use Doctrine\Tests\DBAL\Functional\Driver\AbstractDriverTest;
 use Doctrine\Tests\TestUtil;
+use function array_key_exists;
+use function extension_loaded;
+use function microtime;
+use function sprintf;
 
 class DriverTest extends AbstractDriverTest
 {
@@ -17,9 +21,11 @@ class DriverTest extends AbstractDriverTest
 
         parent::setUp();
 
-        if (! $this->_conn->getDriver() instanceof Driver) {
-            $this->markTestSkipped('pdo_pgsql only test.');
+        if ($this->connection->getDriver() instanceof Driver) {
+            return;
         }
+
+        $this->markTestSkipped('pdo_pgsql only test.');
     }
 
     /**
@@ -27,18 +33,18 @@ class DriverTest extends AbstractDriverTest
      */
     public function testDatabaseParameters($databaseName, $defaultDatabaseName, $expectedDatabaseName)
     {
-        $params = $this->_conn->getParams();
-        $params['dbname'] = $databaseName;
+        $params                   = $this->connection->getParams();
+        $params['dbname']         = $databaseName;
         $params['default_dbname'] = $defaultDatabaseName;
 
         $connection = new Connection(
             $params,
-            $this->_conn->getDriver(),
-            $this->_conn->getConfiguration(),
-            $this->_conn->getEventManager()
+            $this->connection->getDriver(),
+            $this->connection->getConfiguration(),
+            $this->connection->getEventManager()
         );
 
-        $this->assertSame(
+        self::assertSame(
             $expectedDatabaseName,
             $this->driver->getDatabase($connection)
         );
@@ -46,17 +52,17 @@ class DriverTest extends AbstractDriverTest
 
     public function getDatabaseParameter()
     {
-        $params = TestUtil::getConnection()->getParams();
-        $realDatabaseName = isset($params['dbname']) ? $params['dbname'] : '';
+        $params            = TestUtil::getConnection()->getParams();
+        $realDatabaseName  = $params['dbname'] ?? '';
         $dummyDatabaseName = $realDatabaseName . 'a';
 
-        return array(
+        return [
             // dbname, default_dbname, expected
-            array($realDatabaseName, null, $realDatabaseName),
-            array($realDatabaseName, $dummyDatabaseName, $realDatabaseName),
-            array(null, $realDatabaseName, $realDatabaseName),
-            array(null, null, $this->getDatabaseNameForConnectionWithoutDatabaseNameParameter()),
-        );
+            [$realDatabaseName, null, $realDatabaseName],
+            [$realDatabaseName, $dummyDatabaseName, $realDatabaseName],
+            [null, $realDatabaseName, $realDatabaseName],
+            [null, null, $this->getDatabaseNameForConnectionWithoutDatabaseNameParameter()],
+        ];
     }
 
     /**
@@ -64,25 +70,25 @@ class DriverTest extends AbstractDriverTest
      */
     public function testConnectsWithApplicationNameParameter()
     {
-        $parameters = $this->_conn->getParams();
+        $parameters                     = $this->connection->getParams();
         $parameters['application_name'] = 'doctrine';
 
-        $user = isset($parameters['user']) ? $parameters['user'] : null;
-        $password = isset($parameters['password']) ? $parameters['password'] : null;
+        $user     = $parameters['user'] ?? null;
+        $password = $parameters['password'] ?? null;
 
         $connection = $this->driver->connect($parameters, $user, $password);
 
-        $hash = microtime(true); // required to identify the record in the results uniquely
-        $sql = sprintf('SELECT * FROM pg_stat_activity WHERE %d = %d', $hash, $hash);
+        $hash      = microtime(true); // required to identify the record in the results uniquely
+        $sql       = sprintf('SELECT * FROM pg_stat_activity WHERE %d = %d', $hash, $hash);
         $statement = $connection->query($sql);
-        $records = $statement->fetchAll();
+        $records   = $statement->fetchAll();
 
         foreach ($records as $record) {
             // The query column is named "current_query" on PostgreSQL < 9.2
             $queryColumnName = array_key_exists('current_query', $record) ? 'current_query' : 'query';
 
             if ($record[$queryColumnName] === $sql) {
-                $this->assertSame('doctrine', $record['application_name']);
+                self::assertSame('doctrine', $record['application_name']);
 
                 return;
             }

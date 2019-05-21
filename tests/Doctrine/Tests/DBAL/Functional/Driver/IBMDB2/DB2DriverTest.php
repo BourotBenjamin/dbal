@@ -4,6 +4,7 @@ namespace Doctrine\Tests\DBAL\Functional\Driver\IBMDB2;
 
 use Doctrine\DBAL\Driver\IBMDB2\DB2Driver;
 use Doctrine\Tests\DBAL\Functional\Driver\AbstractDriverTest;
+use function extension_loaded;
 
 class DB2DriverTest extends AbstractDriverTest
 {
@@ -15,9 +16,11 @@ class DB2DriverTest extends AbstractDriverTest
 
         parent::setUp();
 
-        if (! $this->_conn->getDriver() instanceof DB2Driver) {
-            $this->markTestSkipped('ibm_db2 only test.');
+        if ($this->connection->getDriver() instanceof DB2Driver) {
+            return;
         }
+
+        $this->markTestSkipped('ibm_db2 only test.');
     }
 
     /**

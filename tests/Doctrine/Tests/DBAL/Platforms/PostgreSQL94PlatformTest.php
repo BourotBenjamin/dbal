@@ -18,14 +18,14 @@ class PostgreSQL94PlatformTest extends PostgreSQL92PlatformTest
     public function testReturnsJsonTypeDeclarationSQL()
     {
         parent::testReturnsJsonTypeDeclarationSQL();
-        $this->assertSame('JSON', $this->_platform->getJsonTypeDeclarationSQL(array('jsonb' => false)));
-        $this->assertSame('JSONB', $this->_platform->getJsonTypeDeclarationSQL(array('jsonb' => true)));
+        self::assertSame('JSON', $this->platform->getJsonTypeDeclarationSQL(['jsonb' => false]));
+        self::assertSame('JSONB', $this->platform->getJsonTypeDeclarationSQL(['jsonb' => true]));
     }
 
     public function testInitializesJsonTypeMapping()
     {
         parent::testInitializesJsonTypeMapping();
-        $this->assertTrue($this->_platform->hasDoctrineTypeMappingFor('jsonb'));
-        $this->assertEquals(Type::JSON, $this->_platform->getDoctrineTypeMapping('jsonb'));
+        self::assertTrue($this->platform->hasDoctrineTypeMappingFor('jsonb'));
+        self::assertEquals(Type::JSON, $this->platform->getDoctrineTypeMapping('jsonb'));
     }
 }

@@ -2,46 +2,47 @@
 
 namespace Doctrine\Tests\DBAL\Types;
 
+use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Tests\DBAL\Mocks\MockPlatform;
+use Doctrine\Tests\DbalTestCase;
+use stdClass;
+use function serialize;
 
-class ObjectTest extends \Doctrine\Tests\DbalTestCase
+class ObjectTest extends DbalTestCase
 {
-    protected
-        $_platform,
-        $_type;
+    /** @var MockPlatform */
+    private $platform;
+
+    /** @var Type */
+    private $type;
 
     protected function setUp()
     {
-        $this->_platform = new MockPlatform();
-        $this->_type = Type::getType('object');
-    }
-
-    protected function tearDown()
-    {
-        error_reporting(-1); // reactive all error levels
+        $this->platform = new MockPlatform();
+        $this->type     = Type::getType('object');
     }
 
     public function testObjectConvertsToDatabaseValue()
     {
-        $this->assertInternalType('string', $this->_type->convertToDatabaseValue(new \stdClass(), $this->_platform));
+        self::assertInternalType('string', $this->type->convertToDatabaseValue(new stdClass(), $this->platform));
     }
 
     public function testObjectConvertsToPHPValue()
     {
-        $this->assertInternalType('object', $this->_type->convertToPHPValue(serialize(new \stdClass), $this->_platform));
+        self::assertInternalType('object', $this->type->convertToPHPValue(serialize(new stdClass()), $this->platform));
     }
 
     public function testConversionFailure()
     {
-        error_reporting( (E_ALL | E_STRICT) - \E_NOTICE );
-        $this->setExpectedException('Doctrine\DBAL\Types\ConversionException');
-        $this->_type->convertToPHPValue('abcdefg', $this->_platform);
+        $this->expectException(ConversionException::class);
+        $this->expectExceptionMessage("Could not convert database value to 'object' as an error was triggered by the unserialization: 'unserialize(): Error at offset 0 of 7 bytes'");
+        $this->type->convertToPHPValue('abcdefg', $this->platform);
     }
 
     public function testNullConversion()
     {
-        $this->assertNull($this->_type->convertToPHPValue(null, $this->_platform));
+        self::assertNull($this->type->convertToPHPValue(null, $this->platform));
     }
 
     /**
@@ -49,6 +50,6 @@ class ObjectTest extends \Doctrine\Tests\DbalTestCase
      */
     public function testFalseConversion()
     {
-        $this->assertFalse($this->_type->convertToPHPValue(serialize(false), $this->_platform));
+        self::assertFalse($this->type->convertToPHPValue(serialize(false), $this->platform));
     }
 }

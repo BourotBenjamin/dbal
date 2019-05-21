@@ -3,6 +3,8 @@
 namespace Doctrine\Tests\DBAL\Functional\Driver;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver;
+use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Doctrine\Tests\DbalFunctionalTestCase;
 
 abstract class AbstractDriverTest extends DbalFunctionalTestCase
@@ -10,7 +12,7 @@ abstract class AbstractDriverTest extends DbalFunctionalTestCase
     /**
      * The driver instance under test.
      *
-     * @var \Doctrine\DBAL\Driver
+     * @var Driver
      */
     protected $driver;
 
@@ -26,15 +28,15 @@ abstract class AbstractDriverTest extends DbalFunctionalTestCase
      */
     public function testConnectsWithoutDatabaseNameParameter()
     {
-        $params = $this->_conn->getParams();
+        $params = $this->connection->getParams();
         unset($params['dbname']);
 
-        $user = isset($params['user']) ? $params['user'] : null;
-        $password = isset($params['password']) ? $params['password'] : null;
+        $user     = $params['user'] ?? null;
+        $password = $params['password'] ?? null;
 
         $connection = $this->driver->connect($params, $user, $password);
 
-        $this->assertInstanceOf('Doctrine\DBAL\Driver\Connection', $connection);
+        self::assertInstanceOf(DriverConnection::class, $connection);
     }
 
     /**
@@ -42,24 +44,24 @@ abstract class AbstractDriverTest extends DbalFunctionalTestCase
      */
     public function testReturnsDatabaseNameWithoutDatabaseNameParameter()
     {
-        $params = $this->_conn->getParams();
+        $params = $this->connection->getParams();
         unset($params['dbname']);
 
         $connection = new Connection(
             $params,
-            $this->_conn->getDriver(),
-            $this->_conn->getConfiguration(),
-            $this->_conn->getEventManager()
+            $this->connection->getDriver(),
+            $this->connection->getConfiguration(),
+            $this->connection->getEventManager()
         );
 
-        $this->assertSame(
+        self::assertSame(
             $this->getDatabaseNameForConnectionWithoutDatabaseNameParameter(),
             $this->driver->getDatabase($connection)
         );
     }
 
     /**
-     * @return \Doctrine\DBAL\Driver
+     * @return Driver
      */
     abstract protected function createDriver();
 

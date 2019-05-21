@@ -5,6 +5,7 @@ namespace Doctrine\Tests\DBAL\Functional\Driver\SQLAnywhere;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\SQLAnywhere\Driver;
 use Doctrine\Tests\DBAL\Functional\Driver\AbstractDriverTest;
+use function extension_loaded;
 
 class DriverTest extends AbstractDriverTest
 {
@@ -16,26 +17,28 @@ class DriverTest extends AbstractDriverTest
 
         parent::setUp();
 
-        if (! $this->_conn->getDriver() instanceof Driver) {
-            $this->markTestSkipped('sqlanywhere only test.');
+        if ($this->connection->getDriver() instanceof Driver) {
+            return;
         }
+
+        $this->markTestSkipped('sqlanywhere only test.');
     }
 
     public function testReturnsDatabaseNameWithoutDatabaseNameParameter()
     {
-        $params = $this->_conn->getParams();
+        $params = $this->connection->getParams();
         unset($params['dbname']);
 
         $connection = new Connection(
             $params,
-            $this->_conn->getDriver(),
-            $this->_conn->getConfiguration(),
-            $this->_conn->getEventManager()
+            $this->connection->getDriver(),
+            $this->connection->getConfiguration(),
+            $this->connection->getEventManager()
         );
 
         // SQL Anywhere has no "default" database. The name of the default database
         // is defined on server startup and therefore can be arbitrary.
-        $this->assertInternalType('string', $this->driver->getDatabase($connection));
+        self::assertInternalType('string', $this->driver->getDatabase($connection));
     }
 
     /**

@@ -2,24 +2,25 @@
 
 namespace Doctrine\Tests\DBAL\Portability;
 
+use Doctrine\DBAL\Driver\Statement as DriverStatement;
+use Doctrine\DBAL\FetchMode;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Portability\Connection;
 use Doctrine\DBAL\Portability\Statement;
+use Doctrine\Tests\DbalTestCase;
+use Doctrine\Tests\Mocks\DriverStatementMock;
+use PHPUnit_Framework_MockObject_MockObject;
+use function iterator_to_array;
 
-class StatementTest extends \Doctrine\Tests\DbalTestCase
+class StatementTest extends DbalTestCase
 {
-    /**
-     * @var \Doctrine\DBAL\Portability\Connection|\PHPUnit_Framework_MockObject_MockObject
-     */
+    /** @var Connection|PHPUnit_Framework_MockObject_MockObject */
     protected $conn;
 
-    /**
-     * @var \Doctrine\DBAL\Portability\Statement
-     */
+    /** @var Statement */
     protected $stmt;
 
-    /**
-     * @var \Doctrine\DBAL\Driver\Statement|\PHPUnit_Framework_MockObject_MockObject
-     */
+    /** @var DriverStatement|PHPUnit_Framework_MockObject_MockObject */
     protected $wrappedStmt;
 
     /**
@@ -39,7 +40,7 @@ class StatementTest extends \Doctrine\Tests\DbalTestCase
     {
         $column   = 'mycolumn';
         $variable = 'myvalue';
-        $type     = \PDO::PARAM_STR;
+        $type     = ParameterType::STRING;
         $length   = 666;
 
         $this->wrappedStmt->expects($this->once())
@@ -47,21 +48,21 @@ class StatementTest extends \Doctrine\Tests\DbalTestCase
             ->with($column, $variable, $type, $length)
             ->will($this->returnValue(true));
 
-        $this->assertTrue($this->stmt->bindParam($column, $variable, $type, $length));
+        self::assertTrue($this->stmt->bindParam($column, $variable, $type, $length));
     }
 
     public function testBindValue()
     {
         $param = 'myparam';
         $value = 'myvalue';
-        $type  = \PDO::PARAM_STR;
+        $type  = ParameterType::STRING;
 
         $this->wrappedStmt->expects($this->once())
             ->method('bindValue')
             ->with($param, $value, $type)
             ->will($this->returnValue(true));
 
-        $this->assertTrue($this->stmt->bindValue($param, $value, $type));
+        self::assertTrue($this->stmt->bindValue($param, $value, $type));
     }
 
     public function testCloseCursor()
@@ -70,7 +71,7 @@ class StatementTest extends \Doctrine\Tests\DbalTestCase
             ->method('closeCursor')
             ->will($this->returnValue(true));
 
-        $this->assertTrue($this->stmt->closeCursor());
+        self::assertTrue($this->stmt->closeCursor());
     }
 
     public function testColumnCount()
@@ -81,7 +82,7 @@ class StatementTest extends \Doctrine\Tests\DbalTestCase
             ->method('columnCount')
             ->will($this->returnValue($columnCount));
 
-        $this->assertSame($columnCount, $this->stmt->columnCount());
+        self::assertSame($columnCount, $this->stmt->columnCount());
     }
 
     public function testErrorCode()
@@ -92,63 +93,58 @@ class StatementTest extends \Doctrine\Tests\DbalTestCase
             ->method('errorCode')
             ->will($this->returnValue($errorCode));
 
-        $this->assertSame($errorCode, $this->stmt->errorCode());
+        self::assertSame($errorCode, $this->stmt->errorCode());
     }
 
     public function testErrorInfo()
     {
-        $errorInfo = array('666', 'Evil error.');
+        $errorInfo = ['666', 'Evil error.'];
 
         $this->wrappedStmt->expects($this->once())
             ->method('errorInfo')
             ->will($this->returnValue($errorInfo));
 
-        $this->assertSame($errorInfo, $this->stmt->errorInfo());
+        self::assertSame($errorInfo, $this->stmt->errorInfo());
     }
 
     public function testExecute()
     {
-        $params = array(
+        $params = [
             'foo',
-            'bar'
-        );
+            'bar',
+        ];
 
         $this->wrappedStmt->expects($this->once())
             ->method('execute')
             ->with($params)
             ->will($this->returnValue(true));
 
-        $this->assertTrue($this->stmt->execute($params));
+        self::assertTrue($this->stmt->execute($params));
     }
 
     public function testSetFetchMode()
     {
-        $fetchMode = \PDO::FETCH_CLASS;
+        $fetchMode = FetchMode::CUSTOM_OBJECT;
         $arg1      = 'MyClass';
-        $arg2      = array(1, 2);
+        $arg2      = [1, 2];
 
         $this->wrappedStmt->expects($this->once())
             ->method('setFetchMode')
             ->with($fetchMode, $arg1, $arg2)
             ->will($this->returnValue(true));
 
-        $this->assertAttributeSame(\PDO::FETCH_BOTH, 'defaultFetchMode', $this->stmt);
-        $this->assertTrue($this->stmt->setFetchMode($fetchMode, $arg1, $arg2));
-        $this->assertAttributeSame($fetchMode, 'defaultFetchMode', $this->stmt);
+        self::assertAttributeSame(FetchMode::MIXED, 'defaultFetchMode', $this->stmt);
+        self::assertTrue($this->stmt->setFetchMode($fetchMode, $arg1, $arg2));
+        self::assertAttributeSame($fetchMode, 'defaultFetchMode', $this->stmt);
     }
 
     public function testGetIterator()
     {
-        $data = array(
-            'foo' => 'bar',
-            'bar' => 'foo'
-        );
+        $this->wrappedStmt->expects($this->exactly(3))
+            ->method('fetch')
+            ->willReturnOnConsecutiveCalls('foo', 'bar', false);
 
-        $this->wrappedStmt->expects($this->once())
-            ->method('fetchAll')
-            ->will($this->returnValue($data));
-
-        $this->assertEquals(new \ArrayIterator($data), $this->stmt->getIterator());
+        self::assertSame(['foo', 'bar'], iterator_to_array($this->stmt->getIterator()));
     }
 
     public function testRowCount()
@@ -159,35 +155,32 @@ class StatementTest extends \Doctrine\Tests\DbalTestCase
             ->method('rowCount')
             ->will($this->returnValue($rowCount));
 
-        $this->assertSame($rowCount, $this->stmt->rowCount());
+        self::assertSame($rowCount, $this->stmt->rowCount());
     }
 
     /**
-     * @return \Doctrine\DBAL\Portability\Connection|\PHPUnit_Framework_MockObject_MockObject
+     * @return Connection|PHPUnit_Framework_MockObject_MockObject
      */
     protected function createConnection()
     {
-        return $this->getMockBuilder('Doctrine\DBAL\Portability\Connection')
+        return $this->getMockBuilder(Connection::class)
             ->disableOriginalConstructor()
             ->getMock();
     }
 
     /**
-     * @param \Doctrine\DBAL\Driver\Statement       $wrappedStatement
-     * @param \Doctrine\DBAL\Portability\Connection $connection
-     *
-     * @return \Doctrine\DBAL\Portability\Statement
+     * @return Statement
      */
-    protected function createStatement(\Doctrine\DBAL\Driver\Statement $wrappedStatement, Connection $connection)
+    protected function createStatement(DriverStatement $wrappedStatement, Connection $connection)
     {
         return new Statement($wrappedStatement, $connection);
     }
 
     /**
-     * @return \Doctrine\DBAL\Driver\Statement|\PHPUnit_Framework_MockObject_MockObject
+     * @return DriverStatement|PHPUnit_Framework_MockObject_MockObject
      */
     protected function createWrappedStatement()
     {
-        return $this->createMock('Doctrine\Tests\Mocks\DriverStatementMock');
+        return $this->createMock(DriverStatementMock::class);
     }
 }

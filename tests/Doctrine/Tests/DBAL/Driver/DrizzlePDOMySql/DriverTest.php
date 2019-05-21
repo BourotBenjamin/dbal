@@ -12,7 +12,7 @@ class DriverTest extends PDOMySQLDriverTest
 {
     public function testReturnsName()
     {
-        $this->assertSame('drizzle_pdo_mysql', $this->driver->getName());
+        self::assertSame('drizzle_pdo_mysql', $this->driver->getName());
     }
 
     public function testThrowsExceptionOnCreatingDatabasePlatformsForInvalidVersion()
@@ -35,12 +35,15 @@ class DriverTest extends PDOMySQLDriverTest
         return new DrizzleSchemaManager($connection);
     }
 
-    protected function getDatabasePlatformsForVersions()
+    /**
+     * @return mixed[][]
+     */
+    protected function getDatabasePlatformsForVersions() : array
     {
-        return array(
-            array('foo', 'Doctrine\DBAL\Platforms\DrizzlePlatform'),
-            array('bar', 'Doctrine\DBAL\Platforms\DrizzlePlatform'),
-            array('baz', 'Doctrine\DBAL\Platforms\DrizzlePlatform'),
-        );
+        return [
+            ['foo', DrizzlePlatform::class],
+            ['bar', DrizzlePlatform::class],
+            ['baz', DrizzlePlatform::class],
+        ];
     }
 }

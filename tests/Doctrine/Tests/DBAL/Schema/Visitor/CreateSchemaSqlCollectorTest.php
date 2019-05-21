@@ -2,18 +2,20 @@
 
 namespace Doctrine\Tests\DBAL\Schema\Visitor;
 
-use \Doctrine\DBAL\Schema\Visitor\CreateSchemaSqlCollector;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\ForeignKeyConstraint;
+use Doctrine\DBAL\Schema\Sequence;
+use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Schema\Visitor\CreateSchemaSqlCollector;
+use PHPUnit\Framework\TestCase;
+use PHPUnit_Framework_MockObject_MockObject;
 
-class CreateSchemaSqlCollectorTest extends \PHPUnit_Framework_TestCase
+class CreateSchemaSqlCollectorTest extends TestCase
 {
-    /**
-     * @var \Doctrine\DBAL\Platforms\AbstractPlatform|\PHPUnit_Framework_MockObject_MockObject
-     */
+    /** @var AbstractPlatform|PHPUnit_Framework_MockObject_MockObject */
     private $platformMock;
 
-    /**
-     * @var \Doctrine\DBAL\Schema\Visitor\CreateSchemaSqlCollector
-     */
+    /** @var CreateSchemaSqlCollector */
     private $visitor;
 
     /**
@@ -23,21 +25,21 @@ class CreateSchemaSqlCollectorTest extends \PHPUnit_Framework_TestCase
     {
         parent::setUp();
 
-        $this->platformMock = $this->getMockBuilder('Doctrine\DBAL\Platforms\AbstractPlatform')
+        $this->platformMock = $this->getMockBuilder(AbstractPlatform::class)
             ->setMethods(
-                array(
+                [
                     'getCreateForeignKeySQL',
                     'getCreateSchemaSQL',
                     'getCreateSequenceSQL',
                     'getCreateTableSQL',
                     'supportsForeignKeyConstraints',
-                    'supportsSchemas'
-                )
+                    'supportsSchemas',
+                ]
             )
             ->getMockForAbstractClass();
-        $this->visitor = new CreateSchemaSqlCollector($this->platformMock);
+        $this->visitor      = new CreateSchemaSqlCollector($this->platformMock);
 
-        foreach (array('getCreateSchemaSQL', 'getCreateTableSQL', 'getCreateForeignKeySQL', 'getCreateSequenceSQL') as $method) {
+        foreach (['getCreateSchemaSQL', 'getCreateTableSQL', 'getCreateForeignKeySQL', 'getCreateSequenceSQL'] as $method) {
             $this->platformMock->expects($this->any())
                 ->method($method)
                 ->will($this->returnValue('foo'));
@@ -56,11 +58,11 @@ class CreateSchemaSqlCollectorTest extends \PHPUnit_Framework_TestCase
 
         $this->visitor->acceptNamespace('foo');
 
-        $this->assertEmpty($this->visitor->getQueries());
+        self::assertEmpty($this->visitor->getQueries());
 
         $this->visitor->acceptNamespace('foo');
 
-        $this->assertSame(array('foo'), $this->visitor->getQueries());
+        self::assertSame(['foo'], $this->visitor->getQueries());
     }
 
     public function testAcceptsTable()
@@ -69,7 +71,7 @@ class CreateSchemaSqlCollectorTest extends \PHPUnit_Framework_TestCase
 
         $this->visitor->acceptTable($table);
 
-        $this->assertSame(array('foo'), $this->visitor->getQueries());
+        self::assertSame(['foo'], $this->visitor->getQueries());
     }
 
     public function testAcceptsForeignKey()
@@ -82,16 +84,16 @@ class CreateSchemaSqlCollectorTest extends \PHPUnit_Framework_TestCase
             ->method('supportsForeignKeyConstraints')
             ->will($this->returnValue(true));
 
-        $table = $this->createTableMock();
+        $table      = $this->createTableMock();
         $foreignKey = $this->createForeignKeyConstraintMock();
 
         $this->visitor->acceptForeignKey($table, $foreignKey);
 
-        $this->assertEmpty($this->visitor->getQueries());
+        self::assertEmpty($this->visitor->getQueries());
 
         $this->visitor->acceptForeignKey($table, $foreignKey);
 
-        $this->assertSame(array('foo'), $this->visitor->getQueries());
+        self::assertSame(['foo'], $this->visitor->getQueries());
     }
 
     public function testAcceptsSequences()
@@ -100,59 +102,59 @@ class CreateSchemaSqlCollectorTest extends \PHPUnit_Framework_TestCase
 
         $this->visitor->acceptSequence($sequence);
 
-        $this->assertSame(array('foo'), $this->visitor->getQueries());
+        self::assertSame(['foo'], $this->visitor->getQueries());
     }
 
     public function testResetsQueries()
     {
-        foreach (array('supportsSchemas', 'supportsForeignKeyConstraints') as $method) {
+        foreach (['supportsSchemas', 'supportsForeignKeyConstraints'] as $method) {
             $this->platformMock->expects($this->any())
                 ->method($method)
                 ->will($this->returnValue(true));
         }
 
-        $table = $this->createTableMock();
+        $table      = $this->createTableMock();
         $foreignKey = $this->createForeignKeyConstraintMock();
-        $sequence = $this->createSequenceMock();
+        $sequence   = $this->createSequenceMock();
 
         $this->visitor->acceptNamespace('foo');
         $this->visitor->acceptTable($table);
         $this->visitor->acceptForeignKey($table, $foreignKey);
         $this->visitor->acceptSequence($sequence);
 
-        $this->assertNotEmpty($this->visitor->getQueries());
+        self::assertNotEmpty($this->visitor->getQueries());
 
         $this->visitor->resetQueries();
 
-        $this->assertEmpty($this->visitor->getQueries());
+        self::assertEmpty($this->visitor->getQueries());
     }
 
     /**
-     * @return \Doctrine\DBAL\Schema\ForeignKeyConstraint|\PHPUnit_Framework_MockObject_MockObject
+     * @return ForeignKeyConstraint|PHPUnit_Framework_MockObject_MockObject
      */
     private function createForeignKeyConstraintMock()
     {
-        return $this->getMockBuilder('Doctrine\DBAL\Schema\ForeignKeyConstraint')
+        return $this->getMockBuilder(ForeignKeyConstraint::class)
             ->disableOriginalConstructor()
             ->getMock();
     }
 
     /**
-     * @return \Doctrine\DBAL\Schema\Sequence|\PHPUnit_Framework_MockObject_MockObject
+     * @return Sequence|PHPUnit_Framework_MockObject_MockObject
      */
     private function createSequenceMock()
     {
-        return $this->getMockBuilder('Doctrine\DBAL\Schema\Sequence')
+        return $this->getMockBuilder(Sequence::class)
             ->disableOriginalConstructor()
             ->getMock();
     }
 
     /**
-     * @return \Doctrine\DBAL\Schema\Table|\PHPUnit_Framework_MockObject_MockObject
+     * @return Table|PHPUnit_Framework_MockObject_MockObject
      */
     private function createTableMock()
     {
-        return $this->getMockBuilder('Doctrine\DBAL\Schema\Table')
+        return $this->getMockBuilder(Table::class)
             ->disableOriginalConstructor()
             ->getMock();
     }

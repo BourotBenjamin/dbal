@@ -2,19 +2,22 @@
 
 namespace Doctrine\Tests\DBAL\Types;
 
+use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\ConversionException;
+use Doctrine\DBAL\Types\JsonType;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Tests\DBAL\Mocks\MockPlatform;
+use Doctrine\Tests\DbalTestCase;
+use function base64_encode;
+use function fopen;
+use function json_encode;
 
-class JsonTest extends \Doctrine\Tests\DbalTestCase
+class JsonTest extends DbalTestCase
 {
-    /**
-     * @var \Doctrine\Tests\DBAL\Mocks\MockPlatform
-     */
+    /** @var MockPlatform */
     protected $platform;
 
-    /**
-     * @var \Doctrine\DBAL\Types\JsonType
-     */
+    /** @var JsonType */
     protected $type;
 
     /**
@@ -28,61 +31,61 @@ class JsonTest extends \Doctrine\Tests\DbalTestCase
 
     public function testReturnsBindingType()
     {
-        $this->assertSame(\PDO::PARAM_STR, $this->type->getBindingType());
+        self::assertSame(ParameterType::STRING, $this->type->getBindingType());
     }
 
     public function testReturnsName()
     {
-        $this->assertSame(Type::JSON, $this->type->getName());
+        self::assertSame(Type::JSON, $this->type->getName());
     }
 
     public function testReturnsSQLDeclaration()
     {
-        $this->assertSame('DUMMYJSON', $this->type->getSQLDeclaration(array(), $this->platform));
+        self::assertSame('DUMMYJSON', $this->type->getSQLDeclaration([], $this->platform));
     }
 
     public function testJsonNullConvertsToPHPValue()
     {
-        $this->assertNull($this->type->convertToPHPValue(null, $this->platform));
+        self::assertNull($this->type->convertToPHPValue(null, $this->platform));
     }
 
     public function testJsonEmptyStringConvertsToPHPValue()
     {
-        $this->assertNull($this->type->convertToPHPValue('', $this->platform));
+        self::assertNull($this->type->convertToPHPValue('', $this->platform));
     }
 
     public function testJsonStringConvertsToPHPValue()
     {
-        $value         = array('foo' => 'bar', 'bar' => 'foo');
+        $value         = ['foo' => 'bar', 'bar' => 'foo'];
         $databaseValue = json_encode($value);
         $phpValue      = $this->type->convertToPHPValue($databaseValue, $this->platform);
 
-        $this->assertEquals($value, $phpValue);
+        self::assertEquals($value, $phpValue);
     }
 
     /** @dataProvider providerFailure */
     public function testConversionFailure($data)
     {
-        $this->setExpectedException('Doctrine\DBAL\Types\ConversionException');
+        $this->expectException(ConversionException::class);
         $this->type->convertToPHPValue($data, $this->platform);
     }
 
     public function providerFailure()
     {
-        return array(array('a'), array('{'));
+        return [['a'], ['{']];
     }
 
     public function testJsonResourceConvertsToPHPValue()
     {
-        $value         = array('foo' => 'bar', 'bar' => 'foo');
+        $value         = ['foo' => 'bar', 'bar' => 'foo'];
         $databaseValue = fopen('data://text/plain;base64,' . base64_encode(json_encode($value)), 'r');
         $phpValue      = $this->type->convertToPHPValue($databaseValue, $this->platform);
 
-        $this->assertSame($value, $phpValue);
+        self::assertSame($value, $phpValue);
     }
 
     public function testRequiresSQLCommentHint()
     {
-        $this->assertTrue($this->type->requiresSQLCommentHint($this->platform));
+        self::assertTrue($this->type->requiresSQLCommentHint($this->platform));
     }
 }

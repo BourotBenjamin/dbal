@@ -2,58 +2,48 @@
 
 namespace Doctrine\Tests\Mocks;
 
-class ConnectionMock extends \Doctrine\DBAL\Connection
-{
-    private $_fetchOneResult;
-    private $_platformMock;
-    private $_lastInsertId = 0;
-    private $_inserts = array();
+use Doctrine\DBAL\Connection;
+use function is_string;
 
+class ConnectionMock extends Connection
+{
+    /** @var DatabasePlatformMock */
+    private $platformMock;
+
+    /** @var int */
+    private $lastInsertId = 0;
+
+    /** @var string[][] */
+    private $inserts = [];
+
+    /**
+     * {@inheritDoc}
+     */
     public function __construct(array $params, $driver, $config = null, $eventManager = null)
     {
-        $this->_platformMock = new DatabasePlatformMock();
+        $this->platformMock = new DatabasePlatformMock();
 
         parent::__construct($params, $driver, $config, $eventManager);
-
-        // Override possible assignment of platform to database platform mock
-        $this->_platform = $this->_platformMock;
     }
 
-    /**
-     * @override
-     */
     public function getDatabasePlatform()
     {
-        return $this->_platformMock;
+        return $this->platformMock;
     }
 
     /**
-     * @override
+     * {@inheritDoc}
      */
-    public function insert($tableName, array $data, array $types = array())
+    public function insert($tableName, array $data, array $types = [])
     {
-        $this->_inserts[$tableName][] = $data;
+        $this->inserts[$tableName][] = $data;
     }
 
-    /**
-     * @override
-     */
     public function lastInsertId($seqName = null)
     {
-        return $this->_lastInsertId;
+        return $this->lastInsertId;
     }
 
-    /**
-     * @override
-     */
-    public function fetchColumn($statement, array $params = array(), $colnum = 0, array $types = array())
-    {
-        return $this->_fetchOneResult;
-    }
-
-    /**
-     * @override
-     */
     public function quote($input, $type = null)
     {
         if (is_string($input)) {
@@ -62,26 +52,19 @@ class ConnectionMock extends \Doctrine\DBAL\Connection
         return $input;
     }
 
-    /* Mock API */
-
-    public function setFetchOneResult($fetchOneResult)
-    {
-        $this->_fetchOneResult = $fetchOneResult;
-    }
-
     public function setLastInsertId($id)
     {
-        $this->_lastInsertId = $id;
+        $this->lastInsertId = $id;
     }
 
     public function getInserts()
     {
-        return $this->_inserts;
+        return $this->inserts;
     }
 
     public function reset()
     {
-        $this->_inserts = array();
-        $this->_lastInsertId = 0;
+        $this->inserts      = [];
+        $this->lastInsertId = 0;
     }
 }
