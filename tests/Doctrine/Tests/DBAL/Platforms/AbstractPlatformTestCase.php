@@ -607,25 +607,6 @@ abstract class AbstractPlatformTestCase extends DbalTestCase
     }
 
     /**
-     * @group 2859
-     */
-    public function testGetDefaultValueDeclarationSQLForDateType() : void
-    {
-        $currentDateSql = $this->_platform->getCurrentDateSQL();
-        foreach (['date', 'date_immutable'] as $type) {
-            $field = [
-                'type'    => Type::getType($type),
-                'default' => $currentDateSql,
-            ];
-
-            self::assertSame(
-                ' DEFAULT ' . $currentDateSql,
-                $this->_platform->getDefaultValueDeclarationSQL($field)
-            );
-        }
-    }
-
-    /**
      * @group DBAL-45
      */
     public function testKeywordList()
